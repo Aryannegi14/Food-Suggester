@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Recipe - {{ dish }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>{{ dish }}</h2>
+
+    {% if image_url %}
+      <img src="{{ image_url }}" alt="{{ dish }} image" class="recipe-image">
+    {% else %}
+      <img src="/static/placeholder.png" alt="No image available" class="recipe-image">
+    {% endif %}
+
+    <div class="recipe-content">
+      <pre>{{ recipe|safe }}</pre> </div>
+
+    <a href="/" class="find-new-recipe-btn">🔄 Find New Recipe</a>
+  </div>
+</body>
+</html>

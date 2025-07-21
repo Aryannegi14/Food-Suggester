@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ChefAI 🍳</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>👨‍🍳 What’s In Your Kitchen?</h1>
+
+    <div class="input-area mb-4">
+      <input type="text" id="ingredientInput" placeholder="e.g., rice, tomato" required autocomplete="off">
+      <div id="autocomplete-suggestions"></div> <button type="button" id="addIngredientBtn">Add Ingredient</button>
+    </div>
+
+    <div id="ingredientsList" class="mb-4">
+      <span class="text-gray-500">No ingredients added yet.</span>
+    </div>
+
+    <form method="POST" action="/suggest">
+      <input type="hidden" name="ingredients" id="hiddenIngredientsInput">
+      <div class="button-container">
+        <button type="submit" id="getDishesBtn" disabled>Tell me dishes</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    const ingredientInput = document.getElementById('ingredientInput');
+    const addIngredientBtn = document.getElementById('addIngredientBtn');
+    const ingredientsList = document.getElementById('ingredientsList');
+    const hiddenIngredientsInput = document.getElementById('hiddenIngredientsInput');
+    const getDishesBtn = document.getElementById('getDishesBtn');
+    const autocompleteSuggestions = document.getElementById('autocomplete-suggestions');
+
+    let ingredients = [];
+    let debounceTimer;
+
+    function renderIngredients() {
+      ingredientsList.innerHTML = '';
+      if (ingredients.length === 0) {
+        ingredientsList.innerHTML = '<span class="text-gray-500">No ingredients added yet.</span>';
+        getDishesBtn.disabled = true;
+      } else {
+        ingredients.forEach((ingredient, index) => {
+          const item = document.createElement('span');
+          item.className = 'ingredient-tag';
+          item.innerHTML = `
+            ${ingredient}
+            <button type="button" data-index="${index}" class="remove-button">
+              &times;
+            </button>
+          `;
+          ingredientsList.appendChild(item);
+        });
+        getDishesBtn.disabled = false;
+      }
+      updateHiddenInput();
+    }
+
+    function addIngredient(name) {
+      const ingredientToAdd = name.trim();
+      if (ingredientToAdd && !ingredients.includes(ingredientToAdd)) {
+        ingredients.push(ingredientToAdd);
+        ingredientInput.value = '';
+        autocompleteSuggestions.innerHTML = '';
+        autocompleteSuggestions.style.display = 'none'; // Hide suggestions after selection
+        renderIngredients();
+      }
+    }
+
+    function removeIngredient(index) {
+      ingredients.splice(index, 1);
+      renderIngredients();
+    }
+
+    function updateHiddenInput() {
+      hiddenIngredientsInput.value = ingredients.join(', ');
+    }
+
+    // Function to fetch and display autocomplete suggestions
+    async function fetchSuggestions(query) {
+        if (query.length < 2) {
+            autocompleteSuggestions.innerHTML = '';
+            autocompleteSuggestions.style.display = 'none'; // Hide if query is too short
+            return;
+        }
+        try {
+            const response = await fetch(`/search_ingredients?query=${encodeURIComponent(query)}`);
+            const suggestions = await response.json();
+            displaySuggestions(suggestions);
+        } catch (error) {
+            console.error('Error fetching suggestions:', error);
+            autocompleteSuggestions.innerHTML = '<div class="suggestion-item">Error loading suggestions.</div>';
+            autocompleteSuggestions.style.display = 'block'; // Show error message
+        }
+    }
+
+    // Function to display suggestions in the UI
+    function displaySuggestions(suggestions) {
+        autocompleteSuggestions.innerHTML = '';
+        if (suggestions.length === 0) {
+            autocompleteSuggestions.style.display = 'none';
+            return;
+        }
+
+        autocompleteSuggestions.style.display = 'block';
+        suggestions.forEach(item => {
+            const suggestionDiv = document.createElement('div');
+            suggestionDiv.className = 'suggestion-item';
+            suggestionDiv.innerHTML = `
+                ${item.image ? `<img src="${item.image}" alt="${item.name}" class="suggestion-image">` : ''}
+                <span>${item.name}</span>
+            `;
+            suggestionDiv.addEventListener('click', () => {
+                addIngredient(item.name);
+            });
+            autocompleteSuggestions.appendChild(suggestionDiv);
+        });
+    }
+
+    // Event Listeners
+    addIngredientBtn.addEventListener('click', () => addIngredient(ingredientInput.value));
+    ingredientInput.addEventListener('keypress', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        addIngredient(ingredientInput.value);
+      }
+    });
+
+    // Input event listener for autocomplete
+    ingredientInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            fetchSuggestions(ingredientInput.value);
+        }, 300); // Debounce for 300ms
+    });
+
+    // Click outside to hide suggestions
+    document.addEventListener('click', (event) => {
+        if (!ingredientInput.contains(event.target) && !autocompleteSuggestions.contains(event.target)) {
+            autocompleteSuggestions.innerHTML = '';
+            autocompleteSuggestions.style.display = 'none';
+        }
+    });
+
+    ingredientsList.addEventListener('click', (event) => {
+      if (event.target.classList.contains('remove-button') || event.target.closest('.remove-button')) {
+        const button = event.target.closest('.remove-button');
+        const index = parseInt(button.dataset.index);
+        if (!isNaN(index)) {
+          removeIngredient(index);
+        }
+      }
+    });
+
+    renderIngredients(); // Initial call to render any pre-existing ingredients (though none yet for this simple app)
+  </script>
+</body>
+</html>

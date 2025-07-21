@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe Suggestions</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="container">
+    <h1>Dishes you can cook with: {{ ingredients }}</h1>
+    <h2>Top 5 Dishes</h2>
+    <div class="dish-list">
+      {% for dish_item in dishes %}
+        <a href="{{ url_for('recipe', dish=dish_item.name) }}" class="dish-card">
+          {% if dish_item.image_url %}
+            <img src="{{ dish_item.image_url }}" alt="{{ dish_item.name }} image">
+          {% else %}
+            <img src="/static/placeholder_dish.png" alt="{{ dish_item.name }} image">
+          {% endif %}
+          <div class="dish-info">
+            <h3>{{ dish_item.name }}</h3>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+    <a href="{{ url_for('index') }}" class="find-new-recipe-btn">🔁 Start Over</a>
+  </div>
+</body>
+</html>
