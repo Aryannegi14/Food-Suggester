@@ -188,4 +188,5 @@ def search_ingredients():
 if __name__ == "__main__":
     # In a production environment, use a production-ready WSGI server like Gunicorn or uWSGI.
     # For local development:
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
